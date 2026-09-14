@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { readFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
@@ -6,7 +7,7 @@ import { sampleReviewPath, sampleVideoPath } from "@/lib/local-sample";
 import type { AutomaticScores } from "@/lib/automatic-score-types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET() {
+async function handleGET() {
   try {
     const report: AutomaticScores = JSON.parse(
       await readFile(
@@ -36,3 +37,5 @@ export async function GET() {
     return Response.json({ error: "自动分析结果尚未生成。" }, { status: 404 });
   }
 }
+
+export const GET = workspaceRoute(handleGET);

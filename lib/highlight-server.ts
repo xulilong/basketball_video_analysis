@@ -1,3 +1,4 @@
+import { storageRoot } from "./workspace-context";
 import {
   access,
   copyFile,
@@ -74,6 +75,8 @@ export async function startHighlights(
   return transaction(async (db) => {
     const video = db.videos.find((v) => v.id === id);
     if (!video) throw new Error("请先上传视频");
+    if (video.mediaArchived)
+      throw new Error("视频已保存到浏览器，请先从本地资料恢复再剪辑");
     const state = await highlightState(id);
     if (["queued", "running"].includes(state.progress?.status)) {
       if (regenerate) throw new Error("当前正在处理，请完成后再修改剪辑配置");
@@ -150,10 +153,7 @@ export async function startHighlights(
           env: {
             ...process.env,
             PYTHONUNBUFFERED: "1",
-            BASKETBALL_ANALYSIS_LOCK: path.join(
-              workbenchRoot(),
-              "analysis.lock"
-            ),
+            BASKETBALL_ANALYSIS_LOCK: path.join(storageRoot(), "analysis.lock"),
             YOLO_CONFIG_DIR: path.join(root, ".local-run/yolo-config"),
           },
         }

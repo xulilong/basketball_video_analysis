@@ -1,8 +1,9 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { musicFile } from "@/lib/highlight-music";
 import { readFile } from "node:fs/promises";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET(
+async function handleGET(
   _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -19,3 +20,5 @@ export async function GET(
     return Response.json({ error: "音乐不存在" }, { status: 404 });
   }
 }
+
+export const GET = workspaceRoute(handleGET);

@@ -1,6 +1,8 @@
 "use client";
+import { uploadVideoChunks } from "@/lib/upload-client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Upload,
   Users,
@@ -93,7 +95,7 @@ export function ScoringWorkbench() {
   }, [editor?.id]);
   const input = useRef<HTMLInputElement>(null);
   const player = useRef<HTMLVideoElement>(null);
-  const uploadRequest = useRef<XMLHttpRequest | null>(null);
+  const uploadRequest = useRef<AbortController | null>(null);
   const refreshNumber = useRef(0);
 
   async function refresh() {
@@ -167,40 +169,19 @@ export function ScoringWorkbench() {
     }
     setUpload(0);
     try {
-      const response = await new Promise<{
-        video: VideoJob;
-        duplicate: boolean;
-      }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        uploadRequest.current = xhr;
-        xhr.open("POST", "/api/videos");
-        xhr.setRequestHeader("X-Video-Name", encodeURIComponent(file.name));
-        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable)
-            setUpload(Math.round((e.loaded / e.total) * 100));
-        };
-        xhr.onload = () => {
-          try {
-            const r = JSON.parse(xhr.responseText);
-            if (xhr.status >= 400) reject(new Error(r.error));
-            else resolve(r);
-          } catch {
-            reject(new Error("上传失败，请重试"));
-          }
-        };
-        xhr.onerror = () =>
-          reject(new Error("无法连接本地服务，请检查服务是否运行"));
-        xhr.onabort = () => reject(new Error("已取消上传"));
-        xhr.send(file);
-      });
+      uploadRequest.current = new AbortController();
+      const response = await uploadVideoChunks(
+        file,
+        setUpload,
+        uploadRequest.current.signal
+      );
       await refresh();
       setSelected(response.video.id);
       setTab("video");
       setNotice(
         response.duplicate
           ? "这个文件已有记录，已打开原记录，不会重复累计得分。"
-          : "视频已上传到本机，点击“开始分析”生成球员和个人得分。"
+          : "视频已上传到你的私有空间，点击“开始分析”生成球员和个人得分。"
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -447,21 +428,30 @@ export function ScoringWorkbench() {
                         : ""}
                     </p>
                   </div>
-                  {!["complete", "running", "queued"].includes(
-                    video.status
-                  ) && (
-                    <button
-                      disabled={busy}
-                      onClick={() =>
-                        void send(`/api/videos/${video.id}/analyze`, "POST")
-                      }
-                      className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-                    >
-                      <Play size={16} />
-                      {video.status === "uploaded"
-                        ? "开始分析"
-                        : "重新开始分析"}
-                    </button>
+                  {!video.mediaArchived &&
+                    !["complete", "running", "queued"].includes(
+                      video.status
+                    ) && (
+                      <button
+                        disabled={busy}
+                        onClick={() =>
+                          void send(`/api/videos/${video.id}/analyze`, "POST")
+                        }
+                        className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+                      >
+                        <Play size={16} />
+                        {video.status === "uploaded"
+                          ? "开始分析"
+                          : "重新开始分析"}
+                      </button>
+                    )}
+                  {video.mediaArchived && (
+                    <p className="mt-4 text-sm text-orange-700">
+                      视频文件已保存到原浏览器。
+                      <Link className="underline" href="/library">
+                        打开本地资料播放、下载或恢复
+                      </Link>
+                    </p>
                   )}
                   {active && (
                     <button
@@ -474,7 +464,7 @@ export function ScoringWorkbench() {
                       停止分析
                     </button>
                   )}
-                  {video.status === "complete" && (
+                  {video.status === "complete" && !video.mediaArchived && (
                     <button
                       disabled={busy}
                       onClick={() =>
@@ -526,7 +516,7 @@ export function ScoringWorkbench() {
                 )}
               </section>
             )}
-            {tab === "video" && video?.court && (
+            {tab === "video" && video?.court && !video.mediaArchived && (
               <details className="rounded-xl border bg-white p-5">
                 <summary className="cursor-pointer font-semibold">
                   球场标线参考 · 查看三分线识别
@@ -828,14 +818,16 @@ export function ScoringWorkbench() {
                       <li key={s}>{s}</li>
                     ))}
                   </ul>
-                  <video
-                    key={video.id}
-                    ref={player}
-                    src={`/api/videos/${video.id}/media`}
-                    controls
-                    preload="none"
-                    className="mb-4 max-h-96 w-full rounded-lg bg-black"
-                  />
+                  {!video.mediaArchived && (
+                    <video
+                      key={video.id}
+                      ref={player}
+                      src={`/api/videos/${video.id}/media`}
+                      controls
+                      preload="none"
+                      className="mb-4 max-h-96 w-full rounded-lg bg-black"
+                    />
+                  )}
                   <p className="mb-3 text-sm text-slate-500">
                     {result.events.length} 个带轨迹依据的候选 ·{" "}
                     {

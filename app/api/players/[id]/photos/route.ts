@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
@@ -11,7 +12,7 @@ import {
 const run = promisify(execFile);
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function POST(
+async function handlePOST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -84,3 +85,5 @@ export async function POST(
     if (output && !saved) await rm(output, { force: true });
   }
 }
+
+export const POST = workspaceRoute(handlePOST);

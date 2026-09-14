@@ -1,10 +1,12 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { transaction } from "@/lib/workbench-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET() {
+async function handleGET() {
   return Response.json(
     await transaction((db) =>
       db.videos
+        .filter((v) => !v.mediaArchived)
         .slice()
         .reverse()
         .slice(0, 20)
@@ -12,3 +14,5 @@ export async function GET() {
     )
   );
 }
+
+export const GET = workspaceRoute(handleGET);

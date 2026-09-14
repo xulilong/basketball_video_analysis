@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import {
   cancelAnalysis,
   checkOrigin,
@@ -5,7 +6,7 @@ import {
 } from "@/lib/workbench-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function POST(
+async function handlePOST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -22,7 +23,7 @@ export async function POST(
     );
   }
 }
-export async function DELETE(
+async function handleDELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -36,3 +37,6 @@ export async function DELETE(
     );
   }
 }
+
+export const POST = workspaceRoute(handlePOST);
+export const DELETE = workspaceRoute(handleDELETE);

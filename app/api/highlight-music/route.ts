@@ -1,10 +1,11 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { listMusic, receiveMusic } from "@/lib/highlight-music";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET() {
+async function handleGET() {
   return Response.json(await listMusic());
 }
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   try {
     return Response.json(await receiveMusic(request));
   } catch (e) {
@@ -14,3 +15,6 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const GET = workspaceRoute(handleGET);
+export const POST = workspaceRoute(handlePOST);

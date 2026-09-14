@@ -1,4 +1,5 @@
 "use client";
+import { useAccount } from "./AccountAccess";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,6 +19,7 @@ import {
 import type { Person, PersonStats } from "@/lib/workbench-types";
 type Profile = Omit<Person, "descriptors">;
 export function PlayerProfiles() {
+  const { user } = useAccount();
   const [players, setPlayers] = useState<Profile[]>([]),
     [stats, setStats] = useState<PersonStats[]>([]),
     [loading, setLoading] = useState(true),
@@ -314,17 +316,19 @@ export function PlayerProfiles() {
         </div>
       </div>
       <div className="mt-profile-notes">
-        <p>
-          名单来源：
-          <a
-            href="https://magictavern.feishu.cn/sheets/NQgVsX4JfhqxPbtLfGDcvjjtnqb"
-            target="_blank"
-            rel="noreferrer"
-          >
-            飞书队服名单 <ArrowUpRight size={12} />
-          </a>
-          。导入后在当前工作空间独立管理，不会修改原表。相同号码可以属于不同球员。
-        </p>
+        {user?.role === "admin" && (
+          <p>
+            名单来源：
+            <a
+              href="https://magictavern.feishu.cn/sheets/NQgVsX4JfhqxPbtLfGDcvjjtnqb"
+              target="_blank"
+              rel="noreferrer"
+            >
+              飞书队服名单 <ArrowUpRight size={12} />
+            </a>
+            。导入后在当前工作空间独立管理，不会修改原表。相同号码可以属于不同球员。
+          </p>
+        )}
         <p>
           参考照片用于后续接入人脸匹配，建议上传清晰、无遮挡的正面和侧面照片。当前技术统计仍采用外观关联，人脸匹配尚未启用。
         </p>

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useAccount } from "./AccountAccess";
 import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
@@ -13,6 +14,12 @@ import {
 } from "lucide-react";
 
 const navigation = [
+  {
+    href: "/board",
+    label: "统计看板",
+    subtitle: "管理员发布的公开统计",
+    icon: BarChart3,
+  },
   { href: "/", label: "首页", subtitle: "工作空间概览", icon: LayoutDashboard },
   {
     href: "/statistics",
@@ -34,9 +41,16 @@ const navigation = [
   },
 ];
 export function ProductShell({ children }: { children: React.ReactNode }) {
-  const hosted = process.env.NEXT_PUBLIC_DEPLOYMENT === "server";
+  const { user, logout } = useAccount();
   const pathname = usePathname();
-  const current = navigation.find((n) => n.href === pathname) || navigation[0];
+  const current = navigation.find((n) => n.href === pathname) || {
+    label:
+      pathname === "/admin"
+        ? "管理员发布"
+        : pathname === "/library"
+        ? "本地资料"
+        : "首页",
+  };
   return (
     <div className="mt-app">
       <a href="#main-content" className="mt-skip">
@@ -70,15 +84,39 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
               {pathname === href && <span className="mt-nav-dot" />}
             </Link>
           ))}
+          {user && (
+            <Link
+              href="/library"
+              className={pathname === "/library" ? "active" : ""}
+            >
+              <HardDrive size={20} />
+              <span>
+                <strong>本地资料</strong>
+                <small>保存到浏览器的视频</small>
+              </span>
+            </Link>
+          )}
+          {user?.role === "admin" && (
+            <Link
+              href="/admin"
+              className={pathname === "/admin" ? "active" : ""}
+            >
+              <Users size={20} />
+              <span>
+                <strong>管理员入口</strong>
+                <small>选择并发布用户统计</small>
+              </span>
+            </Link>
+          )}
         </nav>
         <div className="mt-sidebar-bottom">
           <div className="mt-sidebar-note">
             <span className="mt-live-dot" />
-            {hosted ? "团队试用工作空间" : "本地工作空间"}
+            {user ? `${user.username} 的私有空间` : "公共统计看板"}
             <p>
-              {hosted
-                ? "视频与记录保存在服务器，试用成员共享。"
-                : "视频与记录保存在这台电脑。"}
+              {user
+                ? "仅你和管理员可访问私有数据。"
+                : "仅展示管理员已发布的统计。"}
               <br />
               每一次上场，都值得被记录。
             </p>
@@ -99,7 +137,7 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-5">
             <span className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
               <span className="mt-live-dot" />
-              {hosted ? "服务器存储" : "本机存储"}
+              {user ? "账号数据隔离" : "公开统计"}
             </span>
             <details key={pathname} className="mt-help">
               <summary>
@@ -121,10 +159,17 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
             </details>
             <span
               className="mt-avatar"
-              aria-label={hosted ? "团队试用工作空间" : "本地工作空间"}
+              aria-label={user ? `${user.username} 的私有空间` : "公共统计看板"}
             >
-              MT
+              {user?.username.slice(0, 2) || "MT"}
             </span>
+            {user ? (
+              <button className="mt-text-link" onClick={() => void logout()}>
+                退出
+              </button>
+            ) : (
+              <Link href="/">登录</Link>
+            )}
           </div>
         </header>
         <main id="main-content" className="mt-main">

@@ -7,7 +7,7 @@ const digest = (value) => createHash('sha256').update(value).digest();
 const MAX_UPLOAD = 90 * 1024 * 1024;
 const legacy = new Set(['/api/local-sample', '/api/sample-review', '/api/automatic-scores']);
 
-export function createShareProxy({ username, password, getOrigin, targetPort = 3001 }) {
+export function createShareProxy({ username, password, getOrigin, targetPort = 3001, requirePassword = true }) {
   if (!username || !password) throw new Error('Share credentials are required');
   const expected = digest('Basic ' + Buffer.from(`${username}:${password}`).toString('base64'));
   return http.createServer((req, res) => {
@@ -16,7 +16,7 @@ export function createShareProxy({ username, password, getOrigin, targetPort = 3
       res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' });
       res.end(JSON.stringify({ error: message }));
     };
-    if (!timingSafeEqual(digest(req.headers.authorization || ''), expected)) {
+    if (requirePassword && !timingSafeEqual(digest(req.headers.authorization || ''), expected)) {
       res.setHeader('www-authenticate', 'Basic realm="MT Trial", charset="UTF-8"');
       reply(401, '请输入试用用户名和密码');
       return;
@@ -39,7 +39,8 @@ export function createShareProxy({ username, password, getOrigin, targetPort = 3
     for (const key of Object.keys(headers)) {
       if (key === 'authorization' || key === 'forwarded' || key.startsWith('x-forwarded-') || key.startsWith('cf-') || key === 'connection' || key === 'upgrade') delete headers[key];
     }
-    if (headers.origin) headers.origin = `http://127.0.0.1:${targetPort}`;
+    headers['x-forwarded-proto'] = 'https';
+    if (headers.origin) headers.origin = `https://127.0.0.1:${targetPort}`;
     const upstream = http.request({ hostname: '127.0.0.1', port: targetPort, path: req.url, method: req.method, headers }, (response) => {
       if (res.writableEnded) { response.destroy(); return; }
       const responseHeaders = { ...response.headers, 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' };
@@ -67,6 +68,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const filename = process.argv[2];
   if (!filename) throw new Error('Pass the private access configuration path');
   const credentials = JSON.parse(readFileSync(filename, 'utf8'));
-  const server = createShareProxy({ ...credentials, getOrigin: () => JSON.parse(readFileSync(filename, 'utf8')).origin });
+  const server = createShareProxy({ ...credentials, requirePassword: credentials.accountMode !== true, getOrigin: () => JSON.parse(readFileSync(filename, 'utf8')).origin });
   server.listen(3004, '127.0.0.1', () => console.log('Protected sharing gateway listening on 127.0.0.1:3004'));
 }

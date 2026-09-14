@@ -1,6 +1,6 @@
 # 独立服务器试用部署
 
-这套配置用于单台 Linux 服务器上的团队共享试用，电脑关机后仍可运行。架构为 Caddy HTTPS/访问密码 → Next.js → 本机 Python/FFmpeg 后台分析。试用者共享同一个工作空间和编辑权限，没有独立账号或个人数据隔离。
+这套配置用于单台 Linux 服务器上的团队试用，电脑关机后仍可运行。架构为 Caddy HTTPS/访问密码 → Next.js → 本机 Python/FFmpeg 后台分析。应用使用独立账号和私有工作空间，代理密码仅为外层访问控制，管理员可选择用户统计发布到公共看板。
 
 ## 当前验证状态
 
@@ -80,3 +80,5 @@ docker compose up -d --build
 更新前等待分析结束。`docker compose down` 保留数据卷；**不要使用 `down -v`**，它会删除数据。默认云端数据与当前电脑数据库互不相通，也不会自动同步球员名单。
 
 备份时停止服务写入，复制 `mt-basketball_workbench` 整个卷，连同 `.env`、模型和 Caddy 证书卷分别妥善保存。恢复后检查数据卷权限及任务状态。磁盘不会自动清理，应定期检查占用，试用期间优先上传短视频。
+
+应用管理员由 `scripts/init-admin.mjs` 初始化，初始账号信息只写入数据卷 `access/admin-initial.json`（权限 600），不要公开此文件。普通注册无法获得管理员角色。可用 `BASKETBALL_ADMIN_PASSWORD` 在首次初始化时指定管理员密码。账号隔离和发布流程见 [PRIVATE-WORKSPACES.md](PRIVATE-WORKSPACES.md)。

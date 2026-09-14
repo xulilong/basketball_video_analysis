@@ -1,16 +1,17 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { highlightState, startHighlights } from "@/lib/highlight-server";
 import { checkOrigin } from "@/lib/workbench-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
-export async function GET(_request: Request, context: Context) {
+async function handleGET(_request: Request, context: Context) {
   try {
     return Response.json(await highlightState((await context.params).id));
   } catch {
     return Response.json({ error: "视频不存在" }, { status: 404 });
   }
 }
-export async function POST(request: Request, context: Context) {
+async function handlePOST(request: Request, context: Context) {
   try {
     checkOrigin(request);
     const body = await request.json().catch(() => ({}));
@@ -30,3 +31,6 @@ export async function POST(request: Request, context: Context) {
     );
   }
 }
+
+export const GET = workspaceRoute(handleGET);
+export const POST = workspaceRoute(handlePOST);

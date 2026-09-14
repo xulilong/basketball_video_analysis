@@ -19,7 +19,7 @@
 
 ## 部署方式
 
-**不能直接用 GitHub Pages 运行完整产品。** [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages) 是静态托管，本项目需要 Next.js 服务端 API、可写磁盘、长时间后台任务以及 Python/FFmpeg。应部署到本机或具备这些条件的服务器。本机启动默认不启用登录；服务器试用配置提供代理访问密码，但仍是共享工作空间，没有多用户数据隔离。
+**不能直接用 GitHub Pages 运行完整产品。** [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages) 是静态托管，本项目需要 Next.js 服务端 API、可写磁盘、长时间后台任务以及 Python/FFmpeg。应部署到本机或具备这些条件的服务器。本机和公网均使用独立账号，管理员可选择发布统计到公共看板。
 
 仓库包含源码，不包含内部比赛视频、球员名单数据库、球员照片、自定义音乐和本地模型权重。原项目附带的公开演示视频保留。只克隆代码不会恢复当前电脑的数据。
 
@@ -52,6 +52,7 @@ python3 -m venv .venv-analysis
 
 ```bash
 npm run build
+node scripts/init-admin.mjs
 bash start-local.sh
 ```
 
@@ -72,3 +73,5 @@ npx tsx --test lib/workbench-domain.test.ts lib/player-profiles.test.ts lib/high
 ## 来源与许可
 
 原项目作者 Fırat Göktepe，原项目声明 MIT 许可；保留原 Git 历史与[原版说明](UPSTREAM-README.md)。OSNet 架构代码的作者许可见 [scripts/vendor/OSNET-LICENSE](scripts/vendor/OSNET-LICENSE)。第三方运行时和模型分别遵守各自许可。
+
+账号隔离、公共看板、分片上传和浏览器视频保存见 [PRIVATE-WORKSPACES.md](PRIVATE-WORKSPACES.md)。初始管理员凭据在数据目录的 `access/admin-initial.json` 中，勿提交到 Git。

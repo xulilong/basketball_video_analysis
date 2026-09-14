@@ -1,8 +1,9 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { synchronize, transaction } from "@/lib/workbench-server";
 import { highlightState } from "@/lib/highlight-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET() {
+async function handleGET() {
   try {
     const videos = await transaction(async (db) => {
       await synchronize(db);
@@ -37,3 +38,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = workspaceRoute(handleGET);

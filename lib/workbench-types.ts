@@ -52,6 +52,9 @@ export type Person = {
   createdAt: string;
 };
 export type VideoJob = {
+  mediaArchived?: boolean;
+  mediaCleanupPending?: boolean;
+  archiveReceipt?: string;
   court?: { partial: boolean; note: string; sampledFrames: number };
   id: string;
   name: string;

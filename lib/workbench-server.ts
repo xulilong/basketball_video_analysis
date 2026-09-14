@@ -1,4 +1,9 @@
 import {
+  workspaceContext,
+  rootForUser,
+  storageRoot,
+} from "./workspace-context";
+import {
   mkdir,
   readFile,
   writeFile,
@@ -26,11 +31,10 @@ import type {
   Workbench,
 } from "./workbench-types";
 
-export const workbenchRoot = () =>
-  path.resolve(
-    process.env.BASKETBALL_DATA_DIR ||
-      path.join(process.cwd(), ".local-run/workbench")
-  );
+export const workbenchRoot = () => {
+  const user = workspaceContext.getStore();
+  return user ? rootForUser(user) : storageRoot();
+};
 export function jobDirectory(id: string) {
   if (!/^[a-f0-9]{64}$/.test(id)) throw new Error("无效的视频编号");
   return path.join(workbenchRoot(), "videos", id);
@@ -133,27 +137,48 @@ export async function receiveVideo(request: Request) {
     );
     if (!size) throw new Error("视频文件为空");
     const id = hash.digest("hex");
-    return await transaction(async (db) => {
-      const existing = db.videos.find((v) => v.id === id);
-      if (existing) return { video: existing, duplicate: true };
-      const dir = jobDirectory(id);
-      await mkdir(dir, { recursive: true });
-      await rename(temp, path.join(dir, "source.video"));
-      const video: VideoJob = {
-        id,
-        name,
-        size,
-        createdAt: new Date().toISOString(),
-        status: "uploaded",
-        associations: {},
-        autoMatched: [],
-      };
-      db.videos.push(video);
-      return { video, duplicate: false };
-    });
+    return await commitVideo(temp, name, size, id);
   } finally {
     await rm(temp, { force: true });
   }
+}
+
+export async function commitVideo(
+  temp: string,
+  name: string,
+  size: number,
+  id: string
+) {
+  return await transaction(async (db) => {
+    const existing = db.videos.find((v) => v.id === id);
+    if (existing) {
+      if (existing.mediaArchived) {
+        if (existing.mediaCleanupPending)
+          throw new Error("请先完成服务器清理，再恢复视频");
+        const dir = jobDirectory(id);
+        await mkdir(dir, { recursive: true });
+        await rename(temp, path.join(dir, "source.video"));
+        existing.mediaArchived = false;
+        delete existing.archiveReceipt;
+        delete existing.mediaCleanupPending;
+      }
+      return { video: existing, duplicate: true };
+    }
+    const dir = jobDirectory(id);
+    await mkdir(dir, { recursive: true });
+    await rename(temp, path.join(dir, "source.video"));
+    const video: VideoJob = {
+      id,
+      name,
+      size,
+      createdAt: new Date().toISOString(),
+      status: "uploaded",
+      associations: {},
+      autoMatched: [],
+    };
+    db.videos.push(video);
+    return { video, duplicate: false };
+  });
 }
 
 function alive(pid?: number) {
@@ -217,6 +242,8 @@ export async function startAnalysis(id: string, force = false) {
     await synchronize(db);
     const job = db.videos.find((v) => v.id === id);
     if (!job) throw new Error("视频不存在");
+    if (job.mediaArchived)
+      throw new Error("视频已保存到浏览器，请先从本地资料恢复到服务器再分析");
     if (
       ["running", "queued"].includes(job.status) ||
       (job.status === "complete" && !force)
@@ -245,6 +272,7 @@ export async function startAnalysis(id: string, force = false) {
           env: {
             ...process.env,
             PYTHONUNBUFFERED: "1",
+            BASKETBALL_ANALYSIS_LOCK: path.join(storageRoot(), "analysis.lock"),
             YOLO_CONFIG_DIR: path.join(root, ".local-run/yolo-config"),
           },
         }

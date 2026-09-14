@@ -1,6 +1,8 @@
 "use client";
+import { uploadVideoChunks } from "@/lib/upload-client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAccount } from "./AccountAccess";
 import {
   defaultHighlightOptions,
   type HighlightOptions,
@@ -44,6 +46,8 @@ const clock = (s: number) =>
 const button = "mt-primary";
 
 export function HighlightWorkbench() {
+  const { user } = useAccount();
+  const recentKey = `mt-highlights-job-${user?.id}`;
   const [options, setOptions] = useState<HighlightOptions>(
     defaultHighlightOptions
   );
@@ -114,7 +118,7 @@ export function HighlightWorkbench() {
     setJob(selected);
     window.history.replaceState(null, "", `/highlights?video=${selected.id}`);
     try {
-      localStorage.setItem("mt-highlights-job", JSON.stringify(selected));
+      localStorage.setItem(recentKey, JSON.stringify(selected));
     } catch {}
     void start(selected.id);
   }
@@ -140,14 +144,12 @@ export function HighlightWorkbench() {
           );
         return;
       }
-      const saved = JSON.parse(
-        localStorage.getItem("mt-highlights-job") || "null"
-      );
+      const saved = JSON.parse(localStorage.getItem(recentKey) || "null");
       if (saved && /^[a-f0-9]{64}$/.test(saved.id)) setJob(saved);
     } catch {
       /* No saved job. */
     }
-  }, []);
+  }, [recentKey]);
   useEffect(() => {
     if (!job) return;
     let stopped = false;
@@ -220,36 +222,12 @@ export function HighlightWorkbench() {
     setJob(null);
     setPreview("highlights.mp4");
     try {
-      const data = await new Promise<{ video: { id: string; name: string } }>(
-        (resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/api/videos");
-          xhr.setRequestHeader("x-video-name", encodeURIComponent(file.name));
-          xhr.setRequestHeader("Content-Type", "application/octet-stream");
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable)
-              setUpload(Math.round((event.loaded / event.total) * 100));
-          };
-          xhr.onerror = () =>
-            reject(new Error("上传中断，请检查本地服务后重试"));
-          xhr.onload = () => {
-            try {
-              const value = JSON.parse(xhr.responseText);
-              if (xhr.status < 200 || xhr.status >= 300)
-                throw new Error(value.error || "上传失败");
-              resolve(value);
-            } catch (e) {
-              reject(e);
-            }
-          };
-          xhr.send(file);
-        }
-      );
+      const data = await uploadVideoChunks(file, setUpload);
       const selected = { id: data.video.id, name: data.video.name };
       setJob(selected);
       window.history.replaceState(null, "", `/highlights?video=${selected.id}`);
       try {
-        localStorage.setItem("mt-highlights-job", JSON.stringify(selected));
+        localStorage.setItem(recentKey, JSON.stringify(selected));
       } catch {
         /* Storage is optional. */
       }

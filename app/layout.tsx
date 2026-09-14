@@ -1,3 +1,4 @@
+import { AccountProvider } from "@/components/AccountAccess";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -24,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className} suppressHydrationWarning={true}>
-        <ProductShell>{children}</ProductShell>
+        <AccountProvider>
+          <ProductShell>{children}</ProductShell>
+        </AccountProvider>
       </body>
     </html>
   );

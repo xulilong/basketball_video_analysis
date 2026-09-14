@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
@@ -78,7 +79,10 @@ async function serve(
     return Response.json({ error: "视频不存在" }, { status: 404 });
   }
 }
-export const GET = (r: Request, c: { params: Promise<{ id: string }> }) =>
+const handleGET = (r: Request, c: { params: Promise<{ id: string }> }) =>
   serve(r, c);
-export const HEAD = (r: Request, c: { params: Promise<{ id: string }> }) =>
+const handleHEAD = (r: Request, c: { params: Promise<{ id: string }> }) =>
   serve(r, c, true);
+
+export const GET = workspaceRoute(handleGET);
+export const HEAD = workspaceRoute(handleHEAD);

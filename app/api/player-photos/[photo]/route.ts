@@ -1,9 +1,10 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { transaction, workbenchRoot } from "@/lib/workbench-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET(
+async function handleGET(
   _r: Request,
   c: { params: Promise<{ photo: string }> }
 ) {
@@ -28,3 +29,5 @@ export async function GET(
     return Response.json({ error: "照片不存在" }, { status: 404 });
   }
 }
+
+export const GET = workspaceRoute(handleGET);

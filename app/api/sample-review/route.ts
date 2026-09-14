@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { readFile, stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
@@ -12,7 +13,7 @@ import type {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 let cached: { signature: string; hash: string } | undefined;
-export async function GET() {
+async function handleGET() {
   try {
     const video = sampleVideoPath();
     const info = await stat(video);
@@ -77,3 +78,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = workspaceRoute(handleGET);

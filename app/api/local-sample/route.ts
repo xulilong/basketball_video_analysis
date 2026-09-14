@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
@@ -55,5 +56,8 @@ async function serve(request: Request, head = false) {
     return Response.json({ error: "未找到本地示例.mp4" }, { status: 404 });
   }
 }
-export const GET = (request: Request) => serve(request);
-export const HEAD = (request: Request) => serve(request, true);
+const handleGET = (request: Request) => serve(request);
+const handleHEAD = (request: Request) => serve(request, true);
+
+export const GET = workspaceRoute(handleGET);
+export const HEAD = workspaceRoute(handleHEAD);

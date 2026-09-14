@@ -26,7 +26,7 @@ test('share gateway protects all routes, checks origins, preserves uploads and r
     assert.match(response.headers.get('cache-control'),/no-store/);
     const data=await response.json();
     assert.equal(data.data,'video-bytes');assert.equal(data.auth,undefined);assert.equal(data.forwarded,undefined);
-    assert.equal(data.origin,`http://127.0.0.1:${port}`);
+    assert.equal(data.origin,`https://127.0.0.1:${port}`);
     const range=await fetch(url+'/api/videos/v/media',{headers:{authorization,range:'bytes=0-2'}});
     assert.equal(range.status,206);assert.equal(await range.text(),'abc');
     const rejected=await new Promise((resolve,reject)=>{

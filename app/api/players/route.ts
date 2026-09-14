@@ -1,9 +1,10 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { transaction, checkOrigin } from "@/lib/workbench-server";
 import { personStatistics, mergePeople } from "@/lib/workbench-domain";
 import { createProfile, profileFields } from "@/lib/player-profiles";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET() {
+async function handleGET() {
   return Response.json(
     await transaction((db) => ({
       players: db.players.map((p) => {
@@ -14,7 +15,7 @@ export async function GET() {
     }))
   );
 }
-export async function POST(r: Request) {
+async function handlePOST(r: Request) {
   try {
     checkOrigin(r);
     const body = await r.json();
@@ -31,7 +32,7 @@ export async function POST(r: Request) {
     );
   }
 }
-export async function PATCH(r: Request) {
+async function handlePATCH(r: Request) {
   try {
     checkOrigin(r);
     const body = await r.json();
@@ -72,3 +73,7 @@ export async function PATCH(r: Request) {
     );
   }
 }
+
+export const GET = workspaceRoute(handleGET);
+export const POST = workspaceRoute(handlePOST);
+export const PATCH = workspaceRoute(handlePATCH);

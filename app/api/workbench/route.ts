@@ -1,3 +1,4 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/workbench-domain";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function GET() {
+async function handleGET() {
   try {
     return await transaction(async (db) => {
       const progress = await synchronize(db);
@@ -69,7 +70,7 @@ export async function GET() {
     return Response.json({ error: "无法读取本地记录" }, { status: 500 });
   }
 }
-export async function PATCH(request: Request) {
+async function handlePATCH(request: Request) {
   try {
     checkOrigin(request);
     const action = await request.json();
@@ -114,3 +115,6 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
+export const GET = workspaceRoute(handleGET);
+export const PATCH = workspaceRoute(handlePATCH);

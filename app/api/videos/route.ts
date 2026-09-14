@@ -1,7 +1,8 @@
+import { workspaceRoute } from "@/lib/account-server";
 import { receiveVideo } from "@/lib/workbench-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   try {
     return Response.json(await receiveVideo(request));
   } catch (e) {
@@ -11,3 +12,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = workspaceRoute(handlePOST);
