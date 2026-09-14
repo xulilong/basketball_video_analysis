@@ -163,10 +163,12 @@ export function PlayerProfiles() {
         </div>
         <div>
           <h2>一位球员，一份专属档案</h2>
-          <p>管理姓名、球衣号码与参考照片，并将视频中的人物关联到正式名单。</p>
+          <p>
+            初始姓名与号码来自球队名单。照片、档案修改和视频关联仅保存在当前账号。
+          </p>
         </div>
         <Link href="/statistics" className="mt-text-link">
-          进入技术统计 <ArrowUpRight size={16} />
+          进入视频分析 <ArrowUpRight size={16} />
         </Link>
       </div>
       <div className="mt-roster-summary">

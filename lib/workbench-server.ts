@@ -1,3 +1,4 @@
+import { initializeRoster } from "./default-roster";
 import {
   workspaceContext,
   rootForUser,
@@ -93,6 +94,7 @@ export async function transaction<T>(
       if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
       db = emptyWorkbench();
     }
+    await initializeRoster(db);
     const value = await fn(db);
     const temp = `${file}.${randomUUID()}.tmp`;
     await writeFile(temp, JSON.stringify(db));
