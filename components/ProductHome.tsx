@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useAccount } from "./AccountAccess";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -36,6 +37,7 @@ const statuses: Record<string, string> = {
   cancelled: "已停止",
 };
 export function ProductHome() {
+  const { user } = useAccount();
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,8 +56,12 @@ export function ProductHome() {
     }
   }
   useEffect(() => {
-    void load();
-  }, []);
+    if (user) void load();
+    else {
+      setData(null);
+      setLoading(false);
+    }
+  }, [user]);
   return (
     <div className="mt-home space-y-7">
       <div className="mt-page-heading">
@@ -66,7 +72,7 @@ export function ProductHome() {
         </div>
         <span className="mt-pill">
           <span className="mt-live-dot" />
-          我的篮球工作空间
+          {user ? "我的篮球工作空间" : "欢迎来到 MT 篮球工作台"}
         </span>
       </div>
       <section className="mt-hero">
@@ -86,11 +92,11 @@ export function ProductHome() {
             把场上的投入，变成看得见的回忆。
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/highlights" className="mt-primary">
-              制作进球集锦 <ArrowUpRight size={17} />
+            <Link href="/board" className="mt-primary">
+              查看公共技术看板 <ArrowUpRight size={17} />
             </Link>
             <Link href="/statistics" className="mt-hero-secondary">
-              开始技术统计 <ArrowRight size={16} />
+              开始视频分析 <ArrowRight size={16} />
             </Link>
           </div>
           <div className="mt-hero-caption">
@@ -146,45 +152,47 @@ export function ProductHome() {
           </div>
         </div>
       </section>
-      <section className="mt-overview-grid" aria-label="工作空间数据">
-        {[
-          {
-            label: "已上传视频",
-            value: data?.videoCount,
-            unit: "个",
-            icon: FolderOpen,
-            note: "比赛记录，集中管理",
-          },
-          {
-            label: "已完成技术分析",
-            value: data?.analyzedCount,
-            unit: "个",
-            icon: BarChart3,
-            note: "查看球员与个人得分",
-          },
-          {
-            label: "已生成精彩片段",
-            value: data?.clipCount,
-            unit: "段",
-            icon: Clapperboard,
-            note: "每段精彩，都可导出",
-          },
-        ].map(({ label, value, unit, icon: Icon, note }) => (
-          <div className="mt-metric" key={label}>
-            <div>
-              <p>{label}</p>
-              <strong>
-                {loading ? "—" : value ?? "—"}
-                <small>{unit}</small>
-              </strong>
-              <span>{note}</span>
+      {user && (
+        <section className="mt-overview-grid" aria-label="工作空间数据">
+          {[
+            {
+              label: "已上传视频",
+              value: data?.videoCount,
+              unit: "个",
+              icon: FolderOpen,
+              note: "比赛记录，集中管理",
+            },
+            {
+              label: "已完成技术分析",
+              value: data?.analyzedCount,
+              unit: "个",
+              icon: BarChart3,
+              note: "查看球员与个人得分",
+            },
+            {
+              label: "已生成精彩片段",
+              value: data?.clipCount,
+              unit: "段",
+              icon: Clapperboard,
+              note: "每段精彩，都可导出",
+            },
+          ].map(({ label, value, unit, icon: Icon, note }) => (
+            <div className="mt-metric" key={label}>
+              <div>
+                <p>{label}</p>
+                <strong>
+                  {loading ? "—" : value ?? "—"}
+                  <small>{unit}</small>
+                </strong>
+                <span>{note}</span>
+              </div>
+              <div className="mt-metric-icon">
+                <Icon size={21} strokeWidth={1.6} />
+              </div>
             </div>
-            <div className="mt-metric-icon">
-              <Icon size={21} strokeWidth={1.6} />
-            </div>
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      )}
       {error && (
         <div role="alert" className="mt-error">
           {error}
@@ -193,6 +201,31 @@ export function ProductHome() {
           </button>
         </div>
       )}
+      <section className="mt-panel p-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="mt-eyebrow">TEAM LEADERBOARD</p>
+          <h2>公共技术看板 · 一起见证每次进步</h2>
+          <p className="text-sm text-slate-500 mt-2">
+            所有人都可查看已公开的球员表现，无需登录。
+          </p>
+        </div>
+        <Link href="/board" className="mt-primary">
+          查看球员榜单 <ArrowRight size={17} />
+        </Link>
+      </section>
+      <section className="mt-panel p-6">
+        <h2>
+          {user?.role === "admin" ? "管理员工作流程" : "你的比赛记录，自己掌握"}
+        </h2>
+        <p className="mt-3 text-sm text-slate-500">
+          {user?.role === "admin"
+            ? "上传视频 → 开始分析 → 核对球员与得分 → 发布到公共技术看板"
+            : "上传视频 → 开始分析 → 查看本视频中的球员与个人得分。视频和球员档案保存在你的私有工作空间。"}
+        </p>
+        <Link href="/players" className="mt-text-link mt-3">
+          管理球员档案 <ArrowRight size={15} />
+        </Link>
+      </section>
       <section id="getting-started">
         <div className="mt-section-heading">
           <div>
@@ -211,7 +244,7 @@ export function ProductHome() {
             </div>
             <div>
               <span className="mt-small-label">01 / PLAYER ANALYTICS</span>
-              <h3>技术统计</h3>
+              <h3>视频分析</h3>
               <p>
                 看见每一位球员的投入。识别视频中的人物，
                 <br className="hidden xl:block" />
@@ -233,7 +266,7 @@ export function ProductHome() {
               </span>
             </div>
             <div className="mt-feature-bottom">
-              进入技术统计 <ArrowRight size={19} />
+              进入视频分析 <ArrowRight size={19} />
             </div>
           </Link>
           <Link href="/highlights" className="mt-feature mt-feature-clips">
@@ -272,68 +305,70 @@ export function ProductHome() {
           </Link>
         </div>
       </section>
-      <section className="mt-panel">
-        <div className="mt-panel-heading">
-          <div>
-            <h2>最近的视频</h2>
-            <p>继续处理你的比赛记录。</p>
-          </div>
-          <Link href="/statistics" className="mt-text-link">
-            全部视频 <ArrowUpRight size={16} />
-          </Link>
-        </div>
-        {loading ? (
-          <div className="mt-empty">正在读取比赛记录…</div>
-        ) : data?.recent.length ? (
-          <div className="mt-recent-list">
-            {data.recent.map((v) => (
-              <div key={v.id} className="mt-recent-row">
-                <div className="mt-video-icon">
-                  <Film size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm" title={v.name}>
-                    {v.name}
-                  </strong>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {new Date(v.createdAt).toLocaleDateString("zh-CN")}
-                    <span className="mx-2">·</span>
-                    {(v.size / 1024 / 1024).toFixed(1)} MB
-                  </p>
-                </div>
-                <span className="mt-status hidden sm:inline-flex">
-                  {v.clips
-                    ? `${v.clips} 段集锦`
-                    : v.highlightStatus === "running"
-                    ? "剪辑中"
-                    : statuses[v.status] || "待处理"}
-                </span>
-                <Link
-                  href={`/statistics?video=${v.id}`}
-                  className="mt-recent-action"
-                >
-                  统计 <ArrowUpRight size={14} />
-                </Link>
-                <Link
-                  href={`/highlights?video=${v.id}`}
-                  className="mt-recent-action"
-                >
-                  剪辑 <ArrowUpRight size={14} />
-                </Link>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-empty">
-            <Upload size={30} />
-            <h3>第一段比赛，等你上传</h3>
-            <p>上传视频后，你的比赛记录会出现在这里。</p>
-            <Link href="/highlights" className="mt-primary">
-              上传第一段视频 <ArrowRight size={16} />
+      {user && (
+        <section className="mt-panel">
+          <div className="mt-panel-heading">
+            <div>
+              <h2>最近的视频</h2>
+              <p>继续处理你的比赛记录。</p>
+            </div>
+            <Link href="/statistics" className="mt-text-link">
+              全部视频 <ArrowUpRight size={16} />
             </Link>
           </div>
-        )}
-      </section>
+          {loading ? (
+            <div className="mt-empty">正在读取比赛记录…</div>
+          ) : data?.recent.length ? (
+            <div className="mt-recent-list">
+              {data.recent.map((v) => (
+                <div key={v.id} className="mt-recent-row">
+                  <div className="mt-video-icon">
+                    <Film size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <strong className="block truncate text-sm" title={v.name}>
+                      {v.name}
+                    </strong>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {new Date(v.createdAt).toLocaleDateString("zh-CN")}
+                      <span className="mx-2">·</span>
+                      {(v.size / 1024 / 1024).toFixed(1)} MB
+                    </p>
+                  </div>
+                  <span className="mt-status hidden sm:inline-flex">
+                    {v.clips
+                      ? `${v.clips} 段集锦`
+                      : v.highlightStatus === "running"
+                      ? "剪辑中"
+                      : statuses[v.status] || "待处理"}
+                  </span>
+                  <Link
+                    href={`/statistics?video=${v.id}`}
+                    className="mt-recent-action"
+                  >
+                    统计 <ArrowUpRight size={14} />
+                  </Link>
+                  <Link
+                    href={`/highlights?video=${v.id}`}
+                    className="mt-recent-action"
+                  >
+                    剪辑 <ArrowUpRight size={14} />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-empty">
+              <Upload size={30} />
+              <h3>第一段比赛，等你上传</h3>
+              <p>上传视频后，你的比赛记录会出现在这里。</p>
+              <Link href="/highlights" className="mt-primary">
+                上传第一段视频 <ArrowRight size={16} />
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
       <p className="mt-home-note">
         当前识别能力仍在完善，自动生成的球员、得分和进球片段可能有误差。请结合实际比赛查看结果。
       </p>

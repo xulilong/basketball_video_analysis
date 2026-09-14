@@ -144,7 +144,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     <AccountContext.Provider value={{ user, loading, logout }}>
       {loading ? (
         <div className="mt-empty">正在连接工作台…</div>
-      ) : user || pathname === "/board" ? (
+      ) : user || pathname === "/board" || pathname === "/" ? (
         children
       ) : (
         access

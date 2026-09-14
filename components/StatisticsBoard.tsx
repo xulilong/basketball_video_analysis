@@ -13,12 +13,13 @@ type Row = {
   publishedAt: string;
   sourceUserId?: string;
   sourcePersonId?: string;
+  sourceVideoId?: string;
 };
 export function StatisticsBoard({ admin = false }: { admin?: boolean }) {
   const { user } = useAccount();
   const [rows, setRows] = useState<Row[]>([]),
     [users, setUsers] = useState<{ id: string; username: string }[]>([]),
-    [selected, setSelected] = useState(""),
+    [selected, setSelected] = useState(user?.id || ""),
     [stats, setStats] = useState<PersonStats[]>([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -168,7 +169,8 @@ export function StatisticsBoard({ admin = false }: { admin?: boolean }) {
                         {rows.some(
                           (r) =>
                             r.sourceUserId === selected &&
-                            r.sourcePersonId === p.id
+                            r.sourcePersonId === p.id &&
+                            !r.sourceVideoId
                         )
                           ? "同步最新统计"
                           : "发布到看板"}
@@ -207,6 +209,7 @@ export function StatisticsBoard({ admin = false }: { admin?: boolean }) {
                   <th>进球数</th>
                   <th>已判定得分</th>
                   <th>待判分进球</th>
+                  <th>数据来源</th>
                   <th>发布时间</th>
                   {admin && <th>操作</th>}
                 </tr>
@@ -224,6 +227,11 @@ export function StatisticsBoard({ admin = false }: { admin?: boolean }) {
                         <strong>{r.knownPoints}</strong>
                       </td>
                       <td>{r.unknownValue}</td>
+                      <td>
+                        {r.sourceVideoId
+                          ? `单视频 · ${r.sourceVideoId.slice(0, 8)}`
+                          : "账号累计快照"}
+                      </td>
                       <td>{new Date(r.publishedAt).toLocaleString("zh-CN")}</td>
                       {admin && (
                         <td>

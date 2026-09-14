@@ -41,6 +41,49 @@ export const POST = workspaceRoute(async (request: Request) => {
       });
       return Response.json({ ok: true });
     }
+    if (body.action === "publish-video" || body.action === "preview-video") {
+      const owner = currentUser();
+      const stats = await transaction(async (db) => {
+        await synchronize(db);
+        const video = db.videos.find((v) => v.id === body.videoId);
+        if (!video?.result || video.status !== "complete")
+          throw new Error("请选择已完成分析的视频");
+        return personStatistics(db, video.id);
+      });
+      if (!stats.length) throw new Error("本视频尚无关联到球员的统计");
+      if (body.action === "preview-video")
+        return Response.json({
+          stats: stats.map((p) => ({
+            name: p.name,
+            jerseyNumber: p.jerseyNumber,
+            made: p.made,
+            knownPoints: p.knownPoints,
+            unknownValue: p.unknownValue,
+          })),
+        });
+      await boardTransaction((rows) => {
+        // Replace the whole video snapshot, including removed/relinked identities.
+        for (let i = rows.length - 1; i >= 0; i--)
+          if (
+            rows[i].sourceUserId === owner.id &&
+            rows[i].sourceVideoId === body.videoId
+          )
+            rows.splice(i, 1);
+        for (const p of stats)
+          publishRow(rows, {
+            sourceUserId: owner.id,
+            sourcePersonId: p.id,
+            sourceVideoId: body.videoId,
+            name: p.name,
+            jerseyNumber: p.jerseyNumber,
+            videos: 1,
+            made: p.made,
+            knownPoints: p.knownPoints,
+            unknownValue: p.unknownValue,
+          });
+      });
+      return Response.json({ ok: true, count: stats.length });
+    }
     if (body.action !== "publish") throw new Error("操作不支持");
     const user = await accounts((db) => {
       const u = db.users.find((u) => u.id === body.userId);

@@ -75,3 +75,18 @@ npx tsx --test lib/workbench-domain.test.ts lib/player-profiles.test.ts lib/high
 原项目作者 Fırat Göktepe，原项目声明 MIT 许可；保留原 Git 历史与[原版说明](UPSTREAM-README.md)。OSNet 架构代码的作者许可见 [scripts/vendor/OSNET-LICENSE](scripts/vendor/OSNET-LICENSE)。第三方运行时和模型分别遵守各自许可。
 
 账号隔离、公共看板、分片上传和浏览器视频保存见 [PRIVATE-WORKSPACES.md](PRIVATE-WORKSPACES.md)。初始管理员凭据在数据目录的 `access/admin-initial.json` 中，勿提交到 Git。
+
+
+### 公共看板与账号工作流程
+
+导航：首页、公共技术看板；统计工具下包含视频分析、进球剪辑和球员档案。首页和公共看板无需登录，统计工具按账号隔离。
+
+管理员在已完成的视频分析结果处点击“预览并发布到公共技术看板”，确认后公开本视频的球员得分。重复发布替换该视频快照，重新关联球员后发布也会移除旧关联。不同视频按同一账号的球员档案 ID 累计，同名档案不自动合并。管理员发布中心仍可选择其他账号的数据发布或撤回；账号累计快照与单视频累计分别标注。
+
+飞书历史榜单使用独立导入快照，与视频分析发布的数据分开展示，避免重复累计。导入过程不需要把用户凭据交给 Web 服务，数据保存在数据目录的 `public-board/history.json`，不提交 Git。导入输入为已授权的 `lark-cli base +record-list --format json` 完整导出，投影字段必须包含“球员姓名”“场均得分”“出勤次数”“球员标签”，且 `has_more=false`。执行：
+
+```sh
+node scripts/import-board-history.mjs <导出文件.json>
+```
+
+导入会保留上一份历史数据备份，页面显示导入时间。目前没有后台定时同步飞书。历史场均得分沿用原表公式，出勤不推断为比赛局数，标签不推断为助攻或篮板次数。

@@ -1,4 +1,5 @@
 "use client";
+import { PublishVideo } from "./PublishVideo";
 import { uploadVideoChunks } from "@/lib/upload-client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -257,7 +258,7 @@ export function ScoringWorkbench() {
         <div className="mt-page-heading">
           <div>
             <p className="mt-eyebrow">PLAYER ANALYTICS</p>
-            <h1>技术统计</h1>
+            <h1>视频分析</h1>
             <p>记录每个人的表现，让每一次投入都有迹可循。</p>
           </div>
           <span className="mt-pill">数据分析 · 实验版</span>
@@ -276,6 +277,9 @@ export function ScoringWorkbench() {
           </span>
           <small>同一球员，多段视频持续累计</small>
         </div>
+        {video?.status === "complete" && (
+          <PublishVideo key={video.id} videoId={video.id} />
+        )}
         <section
           className={`mt-upload-strip ${dragging ? "is-dragging" : ""}`}
           onDragOver={(e) => {

@@ -15,15 +15,20 @@ import {
 
 const navigation = [
   {
+    href: "/",
+    label: "首页",
+    subtitle: "篮球记录，从这里开始",
+    icon: LayoutDashboard,
+  },
+  {
     href: "/board",
-    label: "统计看板",
+    label: "公共技术看板",
     subtitle: "管理员发布的公开统计",
     icon: BarChart3,
   },
-  { href: "/", label: "首页", subtitle: "工作空间概览", icon: LayoutDashboard },
   {
     href: "/statistics",
-    label: "技术统计",
+    label: "视频分析",
     subtitle: "记录每个人的表现",
     icon: BarChart3,
   },
@@ -69,21 +74,45 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="mt-nav-label">工作空间</div>
         <nav aria-label="主导航" className="mt-nav">
-          {navigation.map(({ href, label, subtitle, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={pathname === href ? "page" : undefined}
-              className={pathname === href ? "active" : ""}
-            >
-              <Icon size={20} strokeWidth={1.7} />
-              <span>
-                <strong>{label}</strong>
-                <small>{subtitle}</small>
-              </span>
-              {pathname === href && <span className="mt-nav-dot" />}
-            </Link>
-          ))}
+          {navigation
+            .slice(0, 2)
+            .map(({ href, label, subtitle, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={pathname === href ? "page" : undefined}
+                className={pathname === href ? "active" : ""}
+              >
+                <Icon size={20} strokeWidth={1.7} />
+                <span>
+                  <strong>{label}</strong>
+                  <small>{subtitle}</small>
+                </span>
+                {pathname === href && <span className="mt-nav-dot" />}
+              </Link>
+            ))}
+          <div className="mt-tool-group">
+            <div className="mt-tool-group-title">统计工具</div>
+            <div className="mt-tool-children">
+              {navigation
+                .slice(2)
+                .map(({ href, label, subtitle, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={pathname === href ? "page" : undefined}
+                    className={pathname === href ? "active" : ""}
+                  >
+                    <Icon size={18} />
+                    <span>
+                      <strong>{label}</strong>
+                      <small>{subtitle}</small>
+                    </span>
+                  </Link>
+                ))}
+            </div>
+          </div>
+          {user && <div className="mt-tool-group-title">资料与管理</div>}
           {user && (
             <Link
               href="/library"
@@ -130,7 +159,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
       <div className="mt-body">
         <header className="mt-topbar">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400">工作空间</span>
+            <span className="text-slate-400">
+              {["/statistics", "/highlights", "/players"].includes(pathname)
+                ? "统计工具"
+                : "工作空间"}
+            </span>
             <ChevronRight size={14} className="text-slate-300" />
             <strong className="font-medium">{current.label}</strong>
           </div>
@@ -146,7 +179,7 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
               </summary>
               <div>
                 <strong>从一段比赛视频开始</strong>
-                <p>技术统计：上传视频 → 开始分析 → 查看个人数据。</p>
+                <p>视频分析：上传视频 → 开始分析 → 查看个人数据。</p>
                 <p>进球剪辑：上传视频 → 自动剪辑 → 预览并导出 MP4。</p>
                 <p>
                   支持 MP4、MOV、WebM、MKV，单个文件最大 500
@@ -168,7 +201,7 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
                 退出
               </button>
             ) : (
-              <Link href="/">登录</Link>
+              <Link href="/statistics">登录 / 注册</Link>
             )}
           </div>
         </header>
