@@ -5,6 +5,7 @@ import { rootForUser } from "./workspace-context";
 import type { Workbench } from "./workbench-types";
 export type QueueTask = {
   id: string;
+  runId: string;
   username: string;
   videoName: string;
   kind: "analysis" | "highlights" | "selection";
@@ -70,6 +71,7 @@ export async function readTaskQueue() {
             }
             tasks.push({
               id: `${user.id}:${video.id}:${kind}:${suffix}`,
+              runId: String(worker),
               username: user.username,
               videoName: video.name,
               kind,

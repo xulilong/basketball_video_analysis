@@ -27,6 +27,40 @@ export function TaskQueue() {
   const [data, setData] = useState<Snapshot | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  async function cancel(task: QueueTask) {
+    if (
+      !window.confirm(
+        `取消 ${task.username} 的「${task.videoName}」${
+          kinds[task.kind]
+        }任务？原视频和已有结果会保留。`
+      )
+    )
+      return;
+    setCancelling(task.id);
+    setNotice("");
+    setError("");
+    try {
+      const r = await fetch("/api/admin/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cancel",
+          id: task.id,
+          runId: task.runId,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setNotice(data.message);
+      reload();
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "取消失败，请重试");
+    } finally {
+      setCancelling(null);
+    }
+  }
   const [refresh, setRefresh] = useState(0);
   const reload = useCallback(() => setRefresh((n) => n + 1), []);
   useEffect(() => {
@@ -72,6 +106,7 @@ export function TaskQueue() {
               <th>进度</th>
               <th>处理情况</th>
               <th>最近更新</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -120,6 +155,19 @@ export function TaskQueue() {
                     ? new Date(t.updatedAt).toLocaleString("zh-CN")
                     : "—"}
                 </td>
+                <td>
+                  {["running", "queued"].includes(t.status) ? (
+                    <button
+                      className="mt-text-link whitespace-nowrap"
+                      disabled={cancelling !== null}
+                      onClick={() => void cancel(t)}
+                    >
+                      {cancelling === t.id ? "正在取消…" : "取消任务"}
+                    </button>
+                  ) : (
+                    "—"
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -164,6 +212,11 @@ export function TaskQueue() {
         每 3
         秒自动刷新。视频分析与进球剪辑共用处理资源，等待中的任务会自动启动；选中片段导出单独执行。列表顺序不代表严格的执行顺序。
       </p>
+      {notice && (
+        <p role="status" className="mt-panel p-4">
+          {notice}
+        </p>
+      )}
       {error && (
         <p role="alert" className="mt-error">
           {error}，当前显示的可能是上次读取结果。

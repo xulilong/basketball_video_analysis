@@ -8,7 +8,7 @@ ENV NEXT_PUBLIC_DEPLOYMENT=server
 RUN node scripts/copy-wasm-files.js && npm run build && npm prune --omit=dev --ignore-scripts
 
 FROM python:3.11-slim-bookworm AS runtime
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0 libgomp1 libstdc++6 libatomic1 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends procps ffmpeg libgl1 libglib2.0-0 libgomp1 libstdc++6 libatomic1 ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=web /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app
 COPY requirements-analysis.txt ./
