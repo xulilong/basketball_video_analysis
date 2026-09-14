@@ -103,6 +103,7 @@ export async function startSelection(
         path.join(highlightDirectory(id), "selection-worker.pid"),
         String(child.pid)
       );
+      await writeFile(path.join(dir, "worker.pid"), String(child.pid));
       child.unref();
     } catch (e) {
       await writeFile(

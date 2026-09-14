@@ -2048,3 +2048,7 @@ select:disabled {
 .mt-leader-score { font-size:38px; font-weight:700; margin:14px 0 6px; }
 @media(max-width:900px) { .mt-tool-children { margin-left:0; padding-left:0; border:0; } .mt-tool-group-title { padding:6px; letter-spacing:0; } }
 @media(max-width:700px) { .mt-tool-group { flex-basis:100%; margin:0; } .mt-tool-children { display:flex; flex-wrap:wrap; } .mt-leaders { grid-template-columns:1fr; } .mt-leader { padding:16px; } }
+
+/* Keep every administrator navigation item reachable on shorter screens. */
+.mt-sidebar { overflow-y: auto; }
+.mt-sidebar > * { flex-shrink: 0; }

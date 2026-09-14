@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   CircleHelp,
   Users,
+  ListOrdered,
 } from "lucide-react";
 
 const navigation = [
@@ -50,7 +51,9 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const current = navigation.find((n) => n.href === pathname) || {
     label:
-      pathname === "/admin"
+      pathname === "/admin/queue"
+        ? "任务队列"
+        : pathname === "/admin"
         ? "管理员发布"
         : pathname === "/library"
         ? "本地资料"
@@ -122,6 +125,19 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
               <span>
                 <strong>本地资料</strong>
                 <small>保存到浏览器的视频</small>
+              </span>
+            </Link>
+          )}
+          {user?.role === "admin" && (
+            <Link
+              href="/admin/queue"
+              aria-current={pathname === "/admin/queue" ? "page" : undefined}
+              className={pathname === "/admin/queue" ? "active" : ""}
+            >
+              <ListOrdered size={20} />
+              <span>
+                <strong>任务队列</strong>
+                <small>本机处理进度与等待任务</small>
               </span>
             </Link>
           )}
