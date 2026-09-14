@@ -34,6 +34,7 @@ const navigation = [
   },
 ];
 export function ProductShell({ children }: { children: React.ReactNode }) {
+  const hosted = process.env.NEXT_PUBLIC_DEPLOYMENT === "server";
   const pathname = usePathname();
   const current = navigation.find((n) => n.href === pathname) || navigation[0];
   return (
@@ -73,9 +74,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         <div className="mt-sidebar-bottom">
           <div className="mt-sidebar-note">
             <span className="mt-live-dot" />
-            本地工作空间
+            {hosted ? "团队试用工作空间" : "本地工作空间"}
             <p>
-              视频与记录保存在这台电脑。
+              {hosted
+                ? "视频与记录保存在服务器，试用成员共享。"
+                : "视频与记录保存在这台电脑。"}
               <br />
               每一次上场，都值得被记录。
             </p>
@@ -96,7 +99,7 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-5">
             <span className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
               <span className="mt-live-dot" />
-              本机存储
+              {hosted ? "服务器存储" : "本机存储"}
             </span>
             <details key={pathname} className="mt-help">
               <summary>
@@ -116,7 +119,10 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </div>
             </details>
-            <span className="mt-avatar" aria-label="本地工作空间">
+            <span
+              className="mt-avatar"
+              aria-label={hosted ? "团队试用工作空间" : "本地工作空间"}
+            >
               MT
             </span>
           </div>

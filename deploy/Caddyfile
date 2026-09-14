@@ -1,0 +1,9 @@
+{$SITE_HOST} {
+    basic_auth {
+        trial {$TRIAL_PASSWORD_HASH}
+    }
+    header X-Robots-Tag "noindex, nofollow"
+    @legacy path /api/local-sample /api/sample-review /api/automatic-scores
+    respond @legacy 404
+    reverse_proxy app:3001
+}

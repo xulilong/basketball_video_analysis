@@ -40,7 +40,21 @@ export function checkOrigin(request: Request) {
   // Next may reconstruct request.url with localhost while the browser uses
   // 127.0.0.1. Compare against the actual HTTP Host, without trusting forwarded hosts.
   const url = new URL(request.url);
-  const expected = `${url.protocol}//${request.headers.get("host") || url.host}`;
+  // HTTPS terminates at the deployment proxy. Only an operator-configured
+  // origin may override the local protocol; never trust forwarded headers.
+  const configured = process.env.BASKETBALL_PUBLIC_ORIGIN;
+  if (configured) {
+    const parsed = new URL(configured);
+    if (
+      !["https:", "http:"].includes(parsed.protocol) ||
+      parsed.origin !== configured
+    )
+      throw new Error(
+        "BASKETBALL_PUBLIC_ORIGIN 必须是完整来源地址，不含路径或末尾斜杠"
+      );
+  }
+  const expected =
+    configured || `${url.protocol}//${request.headers.get("host") || url.host}`;
   if (origin && origin !== expected)
     throw new Error("不接受其他网站发起的修改请求");
 }

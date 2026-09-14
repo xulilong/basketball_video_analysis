@@ -1,0 +1,17 @@
+.git
+.local-run
+.venv-analysis
+node_modules
+.next
+.env
+.env.*
+*.pem
+*.key
+*.log
+*.tsbuildinfo
+.DS_Store
+coverage
+out
+build
+**/__pycache__
+**/*.pyc
