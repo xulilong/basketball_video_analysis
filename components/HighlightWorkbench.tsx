@@ -1,4 +1,5 @@
 "use client";
+import { SelectedHighlightExport } from "./SelectedHighlightExport";
 import { uploadVideoChunks } from "@/lib/upload-client";
 
 import { useEffect, useRef, useState } from "react";
@@ -101,6 +102,8 @@ export function HighlightWorkbench() {
   const [starting, setStarting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+  const [chosen, setChosen] = useState<string[] | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [preview, setPreview] = useState("highlights.mp4");
   const input = useRef<HTMLInputElement>(null);
   const [recent, setRecent] = useState<{ id: string; name: string }[]>([]);
@@ -241,12 +244,19 @@ export function HighlightWorkbench() {
   }
   const running =
     starting || ["queued", "running"].includes(state.progress?.status || "");
-  const busy = upload !== null || running || musicUploading;
+  const busy = upload !== null || running || musicUploading || exporting;
   const result = state.result;
   const media = (file = "highlights.mp4", download = false) =>
     `/api/videos/${job?.id}/highlights/media?file=${encodeURIComponent(file)}${
       download ? "&download=1" : ""
     }&v=${state.result?.generation || "original"}`;
+  const selectedClips =
+    result?.clips.filter((c) => chosen === null || chosen.includes(c.file)) ??
+    [];
+  const selectedDuration = selectedClips.reduce(
+    (sum, c) => sum + c.end - c.start,
+    0
+  );
   const done = Boolean(result?.clips.length);
   const selectedMusic = music.find((m) => m.id === options.musicId);
   const changed =
@@ -254,7 +264,9 @@ export function HighlightWorkbench() {
     JSON.stringify(options);
   useEffect(() => {
     setPreview("highlights.mp4");
-  }, [result?.generation]);
+    setChosen(null);
+    setExporting(false);
+  }, [job?.id, result?.generation]);
   return (
     <div className="mt-workspace space-y-6">
       <div className="mt-page-heading">
@@ -707,10 +719,22 @@ export function HighlightWorkbench() {
                     {clock(result!.clipDuration)} · MP4
                   </p>
                 </div>
-                <a className={button} href={media("highlights.mp4", true)}>
-                  <Download size={17} />
-                  导出完整集锦
-                </a>
+                <div className="flex flex-wrap items-start gap-3">
+                  <SelectedHighlightExport
+                    key={`${job?.id}:${result?.generation}`}
+                    id={job!.id}
+                    generation={result?.generation || "original"}
+                    files={selectedClips.map((c) => c.file)}
+                    onBusy={setExporting}
+                  />
+                  <a
+                    className="mt-text-link"
+                    href={media("highlights.mp4", true)}
+                  >
+                    <Download size={17} />
+                    下载全部片段集锦
+                  </a>
+                </div>
               </div>
             )}
           </section>
@@ -721,7 +745,7 @@ export function HighlightWorkbench() {
                   进球片段{" "}
                   <span className="mt-count">{result?.clips.length || 0}</span>
                 </h2>
-                <p>按比赛时间排列，支持单独播放和下载。</p>
+                <p>勾选需要保留的片段，按比赛时间合成；也可单独播放和下载。</p>
               </div>
               {done && preview !== "highlights.mp4" && (
                 <button
@@ -733,39 +757,84 @@ export function HighlightWorkbench() {
               )}
             </div>
             {done ? (
-              <div className="mt-clip-list">
-                {result!.clips.map((clip, i) => (
-                  <div
-                    key={clip.file}
-                    className={`mt-clip-row ${
-                      preview === clip.file ? "active" : ""
-                    }`}
+              <div>
+                <div className="px-5 py-3 flex flex-wrap items-center gap-4 border-b border-slate-100">
+                  <button
+                    className="mt-text-link"
+                    disabled={exporting}
+                    onClick={() => setChosen(null)}
                   >
-                    <button
-                      className="mt-clip-play"
-                      aria-label={`播放片段 ${i + 1}`}
-                      onClick={() => setPreview(clip.file)}
-                    >
-                      <Play size={17} />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <strong>进球片段 {String(i + 1).padStart(2, "0")}</strong>
-                      <p>
-                        原视频 {clock(clip.start)} — {clock(clip.end)}
-                      </p>
-                    </div>
-                    <span className="text-xs text-slate-400">
-                      {Math.round(clip.end - clip.start)} 秒
+                    全选
+                  </button>
+                  <button
+                    className="mt-text-link"
+                    disabled={exporting}
+                    onClick={() => setChosen([])}
+                  >
+                    取消全选
+                  </button>
+                  <span className="text-sm text-slate-500">
+                    已选 {selectedClips.length} / {result!.clips.length} 段 · 约{" "}
+                    {clock(selectedDuration)}
+                  </span>
+                  {!selectedClips.length && (
+                    <span className="text-sm text-orange-600">
+                      请至少选择一个片段
                     </span>
-                    <a
-                      href={media(clip.file, true)}
-                      className="mt-icon-button"
-                      aria-label={`下载片段 ${i + 1}`}
+                  )}
+                </div>
+                <div className="mt-clip-list">
+                  {result!.clips.map((clip, i) => (
+                    <div
+                      key={clip.file}
+                      className={`mt-clip-row ${
+                        preview === clip.file ? "active" : ""
+                      }`}
                     >
-                      <Download size={17} />
-                    </a>
-                  </div>
-                ))}
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-orange-500"
+                        aria-label={`选择片段 ${i + 1}`}
+                        disabled={exporting}
+                        checked={chosen === null || chosen.includes(clip.file)}
+                        onChange={(e) =>
+                          setChosen(
+                            e.target.checked
+                              ? [...selectedClips.map((c) => c.file), clip.file]
+                              : selectedClips
+                                  .filter((c) => c.file !== clip.file)
+                                  .map((c) => c.file)
+                          )
+                        }
+                      />
+                      <button
+                        className="mt-clip-play"
+                        aria-label={`播放片段 ${i + 1}`}
+                        onClick={() => setPreview(clip.file)}
+                      >
+                        <Play size={17} />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <strong>
+                          进球片段 {String(i + 1).padStart(2, "0")}
+                        </strong>
+                        <p>
+                          原视频 {clock(clip.start)} — {clock(clip.end)}
+                        </p>
+                      </div>
+                      <span className="text-xs text-slate-400">
+                        {Math.round(clip.end - clip.start)} 秒
+                      </span>
+                      <a
+                        href={media(clip.file, true)}
+                        className="mt-icon-button"
+                        aria-label={`下载片段 ${i + 1}`}
+                      >
+                        <Download size={17} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="mt-empty mt-empty-small">

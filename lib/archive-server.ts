@@ -8,7 +8,11 @@ import {
   jobDirectory,
   workbenchRoot,
 } from "./workbench-server";
-import { highlightState, highlightDirectory } from "./highlight-server";
+import {
+  highlightState,
+  highlightDirectory,
+  selectionRunning,
+} from "./highlight-server";
 import { personStatistics } from "./workbench-domain";
 export type ArchiveFile = {
   name: string;
@@ -44,6 +48,7 @@ export async function prepareArchive(id: string) {
       throw new Error("视频已保存在原浏览器，请在那里打开本地资料");
     const highlights = await highlightState(id);
     if (
+      (await selectionRunning(id)) ||
       ["queued", "running"].includes(video.status) ||
       ["queued", "running"].includes(highlights.progress?.status)
     )
@@ -119,6 +124,7 @@ export async function releaseArchive(
     if (video.archiveReceipt === receiptId && video.mediaArchived) return;
     const state = await highlightState(id);
     if (
+      (await selectionRunning(id)) ||
       ["queued", "running"].includes(video.status) ||
       ["queued", "running"].includes(state.progress?.status)
     )

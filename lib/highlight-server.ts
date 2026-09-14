@@ -29,6 +29,15 @@ function alive(pid: number) {
     return false;
   }
 }
+export async function selectionRunning(id: string) {
+  const pid = Number(
+    await readFile(
+      path.join(highlightDirectory(id), "selection-worker.pid"),
+      "utf8"
+    ).catch(() => "0")
+  );
+  return pid > 0 && alive(pid);
+}
 export async function highlightState(id: string) {
   const dir = highlightDirectory(id);
   const progress = await readFile(path.join(dir, "progress.json"), "utf8")
@@ -77,6 +86,8 @@ export async function startHighlights(
     if (!video) throw new Error("请先上传视频");
     if (video.mediaArchived)
       throw new Error("视频已保存到浏览器，请先从本地资料恢复再剪辑");
+    if (await selectionRunning(id))
+      throw new Error("正在导出选中片段，请完成后再重新剪辑");
     const state = await highlightState(id);
     if (["queued", "running"].includes(state.progress?.status)) {
       if (regenerate) throw new Error("当前正在处理，请完成后再修改剪辑配置");

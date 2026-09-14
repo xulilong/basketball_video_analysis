@@ -1,3 +1,4 @@
+import { selectionDirectory, selectionState } from "@/lib/highlight-selection";
 import { workspaceRoute } from "@/lib/account-server";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
@@ -28,7 +29,16 @@ async function serve(
     const generation = state.result.generation;
     if (generation && !/^[a-f0-9]{32}$/.test(generation))
       throw new Error("无效导出版本");
-    const file = generation
+    const selection = url.searchParams.get("selection");
+    if (
+      selection &&
+      (name !== "highlights.mp4" ||
+        (await selectionState(id, selection)).status !== "complete")
+    )
+      throw new Error("导出尚未完成");
+    const file = selection
+      ? path.join(selectionDirectory(id, selection), "highlights.mp4")
+      : generation
       ? path.join(dir, "exports", generation, name)
       : path.join(dir, name);
     const { size } = await stat(file);
@@ -65,7 +75,9 @@ async function serve(
       "Cache-Control": "private, no-store",
     };
     if (url.searchParams.get("download") === "1")
-      headers["Content-Disposition"] = `attachment; filename="MT-${name}"`;
+      headers["Content-Disposition"] = `attachment; filename="MT-${
+        selection ? "selected-highlights.mp4" : name
+      }"`;
     if (range) headers["Content-Range"] = `bytes ${start}-${end}/${size}`;
     return new Response(
       head
