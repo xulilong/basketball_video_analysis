@@ -1,6 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+/.local-run/
+/.venv-analysis/
+__pycache__/
 /node_modules
 /.pnp
 .pnp.js
@@ -26,7 +29,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -36,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 # AI models (large files)
+/public/models/coco-ssd/
 /public/models/*.bin
 /public/models/*.onnx
 /public/models/*.tflite
@@ -50,4 +56,3 @@ next-env.d.ts
 EVENT_FUSION_IMPLEMENTATION_SUMMARY.md
 TEST_COMPLETION_SUMMARY.md
 new-requirements.md
-

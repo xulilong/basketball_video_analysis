@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:eval": "tsx lib/test-utils/run-evaluation.ts",
+    "test:scorebook": "tsx --test lib/scorebook.test.ts",
     "test:eval:verbose": "tsx lib/test-utils/run-evaluation.ts --verbose",
     "clean": "rm -rf node_modules && rm -rf .next && rm -rf .turbo && rm -rf .cursor && rm -rf .vercel && rm -rf .env && rm -rf .env.local && rm -rf .env.development.local && rm -rf .env.test.local && rm -rf .env.production.local",
     "setup": "sh setup.sh",
@@ -23,6 +24,7 @@
     "prepare": "node scripts/copy-wasm-files.js"
   },
   "dependencies": {
+    "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.15.0",
     "clsx": "^2.0.0",
     "comlink": "^4.4.1",
