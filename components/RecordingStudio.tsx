@@ -403,7 +403,7 @@ export function RecordingStudio({ join = false }: { join?: boolean }) {
       />
       <div className="mt-page-heading">
         <div>
-          <p className="mt-eyebrow">MT MOMENTS · 每一球，都值得记录</p>
+          <p className="mt-eyebrow">每一球，都值得记录</p>
           <h1>{join ? "加入本次球局" : "开启精彩记录"}</h1>
           <p>
             {join

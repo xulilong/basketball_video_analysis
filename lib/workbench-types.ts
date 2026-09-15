@@ -67,7 +67,12 @@ export type VideoJob = {
   associations: Record<string, string>;
   autoMatched: string[];
 };
-export type Workbench = { version: 1; players: Person[]; videos: VideoJob[] };
+export type Workbench = {
+  myProfileId?: string;
+  version: 1;
+  players: Person[];
+  videos: VideoJob[];
+};
 export type JobProgress = {
   status: JobStatus;
   stage: string;

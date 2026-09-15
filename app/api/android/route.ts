@@ -5,12 +5,17 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const apk = await readFile(
-      path.join(process.cwd(), ".local-run/releases/MT-basketball-debug.apk")
+      path.join(
+        process.cwd(),
+        process.env.BASKETBALL_PRODUCT === "public"
+          ? ".local-run/releases/CourtMoments-debug.apk"
+          : ".local-run/releases/MT-basketball-debug.apk"
+      )
     );
     return new Response(new Uint8Array(apk), {
       headers: {
         "Content-Type": "application/vnd.android.package-archive",
-        "Content-Disposition": 'attachment; filename="MT-basketball-debug.apk"',
+        "Content-Disposition": 'attachment; filename="basketball-android.apk"',
         "Content-Length": String(apk.length),
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
