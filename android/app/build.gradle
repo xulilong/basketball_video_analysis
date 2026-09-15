@@ -6,8 +6,8 @@ android {
         applicationId 'com.courtmoments.app'
         minSdk 26
         targetSdk 35
-        versionCode 4
-        versionName '0.2.1'
+        versionCode 5
+        versionName '0.2.2'
         def endpoint = providers.gradleProperty('serverUrl').getOrElse('')
         if (endpoint && !endpoint.matches('https://[a-zA-Z0-9.-]+(:[0-9]+)?')) throw new GradleException('serverUrl must be an HTTPS origin')
         buildConfigField 'String', 'DEFAULT_SERVER', '"' + endpoint + '"'

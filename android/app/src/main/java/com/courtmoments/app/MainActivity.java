@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private ScrollView scroll;
     private String screen="home", activeRecord="", source="", pendingVideo="", pendingName="", pendingInvite="";
     private Uri capturedPhoto, capturedVideo;
+    private VideoView localPreview;
     private File capturedVideoFile;
     private File captureFile;
     private boolean busy=false, recordingFile=false;
@@ -185,7 +186,28 @@ public class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int code,int result,Intent data){super.onActivityResult(code,result,data);if(result!=RESULT_OK){if(code==CAPTURE_VIDEO){finishCapture(false);capturedVideo=null;}return;}Uri uri=data==null?null:data.getData();if(code==CAPTURE_PHOTO)uri=capturedPhoto;if(code==CAPTURE_VIDEO&&capturedVideo!=null){if(uri==null||uri.equals(capturedVideo)){uri=capturedVideo;finishCapture(true);}else finishCapture(false);capturedVideo=null;}if(uri==null){message("没有取得文件，请重新选择");return;}final Uri chosen=uri;
         if(code==PICK_PHOTO||code==CAPTURE_PHOTO){final String person=photoPerson;run("正在上传照片",()->{byte[] raw=Api.read(getContentResolver().openInputStream(chosen),10*1024*1024);JSONObject p=new JSONObject(new String(api.request("POST","/api/players/"+person+"/photos",raw,"application/octet-stream",null),java.nio.charset.StandardCharsets.UTF_8));api.json("PATCH","/api/players",Api.object("type","cover","id",person,"photoId",p.getString("id")));return api.get("/api/players").getJSONArray("players");},p->{people=p;selectMyProfile();if(captureFile!=null){captureFile.delete();captureFile=null;}if("mode".equals(screen))show("mode");else if(!activeRecord.isEmpty())openRecord(activeRecord);else show("profile");});}
-        else if(code==PICK_VIDEO||code==CAPTURE_VIDEO)uploadVideo(chosen);
+        else if(code==PICK_VIDEO||code==CAPTURE_VIDEO)confirmVideo(chosen);
+    }
+    private void confirmVideo(Uri uri){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(16),dp(8),dp(16),dp(8));
+        String name="所选视频";long size=-1;
+        try(Cursor c=getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME,OpenableColumns.SIZE},null,null,null)){if(c!=null&&c.moveToFirst()){name=c.getString(0);if(!c.isNull(1))size=c.getLong(1);}}catch(Exception ignored){}
+        add(box,text(name,16,INK));add(box,text(size>=0?String.format(Locale.CHINA,"%.1f MB · 仅在手机本地预览",size/1048576.0):"仅在手机本地预览",13,MUTED));
+        VideoView preview=new VideoView(this);localPreview=preview;box.addView(preview,new LinearLayout.LayoutParams(-1,dp(210)));
+        MediaController controls=new MediaController(this);controls.setAnchorView(preview);preview.setMediaController(controls);
+        TextView info=text("正在读取视频…",13,MUTED);add(box,info);
+        Button toggle=button("播放 / 暂停",false,()->{if(preview.isPlaying())preview.pause();else preview.start();controls.show();});add(box,toggle);toggle.setEnabled(false);
+        add(box,text("确认画面后再上传，也可以重新选择视频。",14,MUTED));
+        ScrollView sc=new ScrollView(this);sc.addView(box);boolean tooLarge=size>500L*1024*1024;
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("预览并确认视频").setView(sc).setPositiveButton("确认上传",null).setNeutralButton("重新选择",(d,w)->pickVideo(false)).setNegativeButton("取消",null).create();
+        preview.setOnPreparedListener(mp->{preview.seekTo(1);toggle.setEnabled(true);info.setText(String.format(Locale.CHINA,"时长 %d:%02d · 可播放并拖动进度",mp.getDuration()/60000,(mp.getDuration()/1000)%60));});
+        preview.setOnErrorListener((mp,a,b)->{toggle.setEnabled(false);info.setText("手机暂不支持预览此格式，可重新选择或确认后上传处理。");return true;});
+        dialog.setOnDismissListener(d->{preview.stopPlayback();if(localPreview==preview)localPreview=null;});
+        dialog.show();dialog.getWindow().setLayout(-1,-2);
+        Button confirm=dialog.getButton(AlertDialog.BUTTON_POSITIVE);confirm.setEnabled(!tooLarge);
+        if(tooLarge){info.setText("视频超过 500 MB，请重新选择较短的视频。");preview.setOnPreparedListener(mp->{preview.seekTo(1);toggle.setEnabled(true);});}
+        confirm.setOnClickListener(v->{if(busy)return;confirm.setEnabled(false);dialog.dismiss();uploadVideo(uri);});
+        preview.setVideoURI(uri);
     }
     private void uploadVideo(Uri uri){final String record=recordingFile?activeRecord:"";run("正在准备视频，请保持应用在前台",()->{
         File tmp=File.createTempFile("upload-",".video",getCacheDir());String name="比赛视频.mp4";
@@ -293,9 +315,10 @@ public class MainActivity extends Activity {
         JSONArray members=detail.optJSONArray("members");for(int i=0;i<members.length();i++){JSONObject member=members.optJSONObject(i);add(box,button(member.optString("name"),false,()->{dialog.dismiss();run("正在关联球员",()->api.json("PATCH","/api/workbench",Api.object("type","link","videoId",video,"localId",detected.getString("id"),"target",member.getString("personId"))),r->openRecord(activeRecord));}));}
         dialog.show();dialog.getWindow().setLayout(-1,(int)(getResources().getDisplayMetrics().heightPixels*0.8));
     }
-    private void settings(){new AlertDialog.Builder(this).setTitle("球场时刻").setMessage("每一球，都是你的时刻。\n\n版本 0.2.1 · 内测版\n\n录像上传后在服务器分析，上传期间请保持前台。照片和记录保存在你的账号下。自动统计仍为实验功能，请核对进球和球员归属。").setPositiveButton("完成",null).setNeutralButton("连接诊断",(d,w)->connectionSettings()).show();}
-    private void connectionSettings(){EditText endpoint=field("HTTPS 服务地址",api.origin,false);new AlertDialog.Builder(this).setTitle("球场时刻 · 服务设置").setMessage("视频会上传到独立服务进行分析。上传时保持前台。当前为内测版 0.2.1，统计结果仍需核对。").setView(endpoint).setPositiveButton("保存并连接",(d,w)->{String value=endpoint.getText().toString().trim().replaceAll("/+$","");if(!value.matches("https://[a-zA-Z0-9.-]+(:[0-9]+)?")){message("请输入完整 HTTPS 服务地址");return;}if(busy)return;handler.removeCallbacks(poll);api.clearSession();getPreferences(MODE_PRIVATE).edit().putString("server",value).apply();api=new Api(this,value);user=null;profile=null;people=new JSONArray();history=new JSONArray();activeRecord="";pendingVideo="";authenticateSession();}).setNegativeButton("取消",null).show();}
+    private void settings(){new AlertDialog.Builder(this).setTitle("球场时刻").setMessage("每一球，都是你的时刻。\n\n版本 0.2.2 · 内测版\n\n录像上传后在服务器分析，上传期间请保持前台。照片和记录保存在你的账号下。自动统计仍为实验功能，请核对进球和球员归属。").setPositiveButton("完成",null).setNeutralButton("连接诊断",(d,w)->connectionSettings()).show();}
+    private void connectionSettings(){EditText endpoint=field("HTTPS 服务地址",api.origin,false);new AlertDialog.Builder(this).setTitle("球场时刻 · 服务设置").setMessage("视频会上传到独立服务进行分析。上传时保持前台。当前为内测版 0.2.2，统计结果仍需核对。").setView(endpoint).setPositiveButton("保存并连接",(d,w)->{String value=endpoint.getText().toString().trim().replaceAll("/+$","");if(!value.matches("https://[a-zA-Z0-9.-]+(:[0-9]+)?")){message("请输入完整 HTTPS 服务地址");return;}if(busy)return;handler.removeCallbacks(poll);api.clearSession();getPreferences(MODE_PRIVATE).edit().putString("server",value).apply();api=new Api(this,value);user=null;profile=null;people=new JSONArray();history=new JSONArray();activeRecord="";pendingVideo="";authenticateSession();}).setNegativeButton("取消",null).show();}
     private void back(){if(busy){message("正在处理，请完成后再返回");return;}if("home".equals(screen)||"login".equals(screen))finish();else{activeRecord="";show("home");}}
     @Override public void onBackPressed(){back();}
-    @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);network.shutdown();images.shutdown();super.onDestroy();}
+    @Override protected void onPause(){if(localPreview!=null)localPreview.pause();super.onPause();}
+    @Override protected void onDestroy(){if(localPreview!=null)localPreview.stopPlayback();handler.removeCallbacksAndMessages(null);network.shutdown();images.shutdown();super.onDestroy();}
 }
