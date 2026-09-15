@@ -12,6 +12,7 @@ import {
   CircleHelp,
   Users,
   ListOrdered,
+  Camera,
 } from "lucide-react";
 
 const navigation = [
@@ -51,7 +52,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const current = navigation.find((n) => n.href === pathname) || {
     label:
-      pathname === "/admin/queue"
+      pathname === "/record"
+        ? "开启精彩记录"
+        : pathname === "/join"
+        ? "加入球局"
+        : pathname === "/admin/queue"
         ? "任务队列"
         : pathname === "/admin"
         ? "管理员发布"
@@ -60,7 +65,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         : "首页",
   };
   return (
-    <div className="mt-app">
+    <div
+      className={`mt-app ${
+        ["/record", "/join"].includes(pathname) ? "mt-record-shell" : ""
+      }`}
+    >
       <a href="#main-content" className="mt-skip">
         跳至主要内容
       </a>
@@ -77,6 +86,16 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="mt-nav-label">工作空间</div>
         <nav aria-label="主导航" className="mt-nav">
+          <Link
+            href="/record"
+            className={pathname === "/record" ? "active" : ""}
+          >
+            <Camera size={20} />
+            <span>
+              <strong>开启精彩记录</strong>
+              <small>拍摄或上传 · 个人与团队</small>
+            </span>
+          </Link>
           {navigation
             .slice(0, 2)
             .map(({ href, label, subtitle, icon: Icon }) => (
@@ -175,11 +194,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
       <div className="mt-body">
         <header className="mt-topbar">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400">
+            <Link href="/" className="text-slate-400">
               {["/statistics", "/highlights", "/players"].includes(pathname)
                 ? "统计工具"
                 : "工作空间"}
-            </span>
+            </Link>
             <ChevronRight size={14} className="text-slate-300" />
             <strong className="font-medium">{current.label}</strong>
           </div>
