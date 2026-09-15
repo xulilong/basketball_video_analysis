@@ -92,8 +92,8 @@ export function ProductHome() {
             把场上的投入，变成看得见的回忆。
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/record" className="mt-primary">
-              开启精彩记录 <ArrowUpRight size={17} />
+            <Link href="/board" className="mt-primary">
+              查看公共技术看板 <ArrowUpRight size={17} />
             </Link>
             <Link href="/statistics" className="mt-hero-secondary">
               开始视频分析 <ArrowRight size={16} />

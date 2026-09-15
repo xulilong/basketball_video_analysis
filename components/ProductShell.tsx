@@ -12,7 +12,6 @@ import {
   CircleHelp,
   Users,
   ListOrdered,
-  Camera,
 } from "lucide-react";
 
 const navigation = [
@@ -86,16 +85,6 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="mt-nav-label">工作空间</div>
         <nav aria-label="主导航" className="mt-nav">
-          <Link
-            href="/record"
-            className={pathname === "/record" ? "active" : ""}
-          >
-            <Camera size={20} />
-            <span>
-              <strong>开启精彩记录</strong>
-              <small>拍摄或上传 · 个人与团队</small>
-            </span>
-          </Link>
           {navigation
             .slice(0, 2)
             .map(({ href, label, subtitle, icon: Icon }) => (
